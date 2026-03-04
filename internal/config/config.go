@@ -38,6 +38,18 @@ func GetRootDir() string {
 	return rootDir
 }
 
+// expandPath expands a leading ~ to the user's home directory
+func expandPath(path string) (string, error) {
+	if len(path) == 0 || path[0] != '~' {
+		return path, nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("could not determine home directory: %w", err)
+	}
+	return filepath.Join(home, path[1:]), nil
+}
+
 // Init initializes the configuration
 func Init() error {
 	// Config directory can be set via LARK_CONFIG_DIR or legacy LARK_CAL_CONFIG_DIR
@@ -47,6 +59,12 @@ func Init() error {
 	}
 	if cfgDir == "" {
 		return fmt.Errorf("LARK_CONFIG_DIR environment variable is not set")
+	}
+
+	var err error
+	cfgDir, err = expandPath(cfgDir)
+	if err != nil {
+		return err
 	}
 
 	rootDir = filepath.Dir(cfgDir)
