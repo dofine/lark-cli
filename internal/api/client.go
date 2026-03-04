@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/yjwong/lark-cli/internal/auth"
+	"github.com/yjwong/lark-cli/internal/config"
 )
 
 const (
-	baseURL        = "https://open.larksuite.com/open-apis"
 	defaultTimeout = 30 * time.Second
 )
 
@@ -46,7 +46,7 @@ func (c *Client) doRequest(method, path string, body interface{}, result interfa
 		reqBody = bytes.NewBuffer(jsonBody)
 	}
 
-	url := baseURL + path
+	url := config.GetBaseURL() + path
 	req, err := http.NewRequest(method, url, reqBody)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
@@ -121,7 +121,7 @@ func (c *Client) doRequestWithTenantToken(method, path string, body interface{},
 		reqBody = bytes.NewBuffer(jsonBody)
 	}
 
-	url := baseURL + path
+	url := config.GetBaseURL() + path
 	req, err := http.NewRequest(method, url, reqBody)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
@@ -178,7 +178,7 @@ func (c *Client) DownloadWithTenantToken(path string) (io.ReadCloser, string, er
 		return nil, "", err
 	}
 
-	url := baseURL + path
+	url := config.GetBaseURL() + path
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create request: %w", err)
@@ -213,7 +213,7 @@ func (c *Client) Download(path string) (io.ReadCloser, string, error) {
 		return nil, "", err
 	}
 
-	url := baseURL + path
+	url := config.GetBaseURL() + path
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create request: %w", err)

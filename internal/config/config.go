@@ -11,6 +11,7 @@ import (
 type Config struct {
 	AppID     string `mapstructure:"app_id"`
 	AppSecret string `mapstructure:"app_secret"`
+	Region    string `mapstructure:"region"`
 	Defaults  struct {
 		Timezone        string `mapstructure:"timezone"`
 		ReminderMinutes int    `mapstructure:"reminder_minutes"`
@@ -63,11 +64,13 @@ func Init() error {
 	viper.SetDefault("defaults.timezone", "Asia/Singapore")
 	viper.SetDefault("defaults.reminder_minutes", 15)
 	viper.SetDefault("oauth.redirect_port", 9999)
+	viper.SetDefault("region", "lark")
 
 	// Environment variable bindings
 	viper.SetEnvPrefix("LARK")
 	viper.BindEnv("app_id", "LARK_APP_ID")
 	viper.BindEnv("app_secret", "LARK_APP_SECRET")
+	viper.BindEnv("region", "LARK_REGION")
 
 	// Read config file (if exists)
 	if err := viper.ReadInConfig(); err != nil {
@@ -126,4 +129,17 @@ func TenantTokensFilePath() string {
 // GetCustomEmojis returns the custom emoji mappings
 func GetCustomEmojis() map[string]string {
 	return viper.GetStringMapString("custom_emojis")
+}
+
+// GetRegion returns the configured region ("lark" or "feishu")
+func GetRegion() string {
+	return viper.GetString("region")
+}
+
+// GetBaseURL returns the API base URL for the configured region
+func GetBaseURL() string {
+	if GetRegion() == "feishu" {
+		return "https://open.feishu.cn/open-apis"
+	}
+	return "https://open.larksuite.com/open-apis"
 }

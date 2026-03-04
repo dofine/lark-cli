@@ -18,11 +18,23 @@ import (
 )
 
 const (
-	authorizationURL     = "https://accounts.larksuite.com/open-apis/authen/v1/authorize"
-	tokenURL             = "https://open.larksuite.com/open-apis/authen/v2/oauth/token"
-	tenantTokenURL       = "https://open.larksuite.com/open-apis/auth/v3/tenant_access_token/internal"
-	defaultTimeout       = 5 * time.Minute
+	defaultTimeout = 5 * time.Minute
 )
+
+func getAuthorizationURL() string {
+	if config.GetRegion() == "feishu" {
+		return "https://accounts.feishu.cn/open-apis/authen/v1/authorize"
+	}
+	return "https://accounts.larksuite.com/open-apis/authen/v1/authorize"
+}
+
+func getTokenURL() string {
+	return config.GetBaseURL() + "/authen/v2/oauth/token"
+}
+
+func getTenantTokenURL() string {
+	return config.GetBaseURL() + "/auth/v3/tenant_access_token/internal"
+}
 
 // TokenResponse represents the OAuth token response from Lark
 type TokenResponse struct {
@@ -232,7 +244,7 @@ func RefreshTenantToken() error {
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", tenantTokenURL, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequest("POST", getTenantTokenURL(), bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -290,7 +302,7 @@ func buildAuthorizationURL(appID, redirectURI, state, scopeString string) string
 	params.Set("scope", scopeString)
 	params.Set("state", state)
 
-	return authorizationURL + "?" + params.Encode()
+	return getAuthorizationURL() + "?" + params.Encode()
 }
 
 // exchangeCodeForTokens exchanges the authorization code for access tokens
@@ -325,7 +337,7 @@ func doTokenRequest(reqBody map[string]string) (*TokenResponse, error) {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", tokenURL, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequest("POST", getTokenURL(), bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
