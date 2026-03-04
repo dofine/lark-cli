@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/yjwong/lark-cli/internal/auth"
+	"github.com/yjwong/lark-cli/internal/config"
 )
 
 // ListMessagesOptions contains optional parameters for ListMessages
@@ -161,7 +162,7 @@ func (c *Client) UploadMessageImage(filePath string) (string, error) {
 		return "", fmt.Errorf("failed to finalize upload: %w", err)
 	}
 
-	url := baseURL + "/im/v1/images"
+	url := config.GetBaseURL() + "/im/v1/images"
 	req, err := http.NewRequest("POST", url, &buf)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)

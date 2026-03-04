@@ -24,13 +24,13 @@ var Groups = map[string]ScopeGroup{
 	"contacts": {
 		Name:        "contacts",
 		Description: "Company directory lookup",
-		Scopes:      []string{"contact:contact.base:readonly", "contact:department.base:readonly", "contact:department.organize:readonly", "contact:user:search"},
+		Scopes:      []string{"contact:contact.base:readonly", "contact:department.base:readonly", "contact:user:search"},
 		Commands:    []string{"contact"},
 	},
 	"documents": {
 		Name:        "documents",
 		Description: "Lark Docs and Drive access",
-		Scopes:      []string{"docx:document:readonly", "docx:document", "docx:document:create", "docs:doc:readonly", "docs:document.content:read", "docs:document.comment:read", "drive:drive:readonly", "wiki:wiki:readonly", "space:document:retrieve"},
+		Scopes:      []string{"docx:document:readonly", "docx:document", "docx:document:create", "docs:document.content:read", "docs:document.comment:read", "wiki:wiki:readonly"},
 		Commands:    []string{"doc"},
 	},
 	"bitable": {
@@ -45,23 +45,12 @@ var Groups = map[string]ScopeGroup{
 		Scopes:      []string{"im:message:readonly", "im:message", "im:message:send_as_bot", "im:message.reactions:read", "im:message.reactions:write_only"},
 		Commands:    []string{"msg", "chat"},
 	},
-	"mail": {
-		Name:        "mail",
-		Description: "Email via IMAP",
-		Scopes:      []string{"mail:user_mailbox.message.address:read", "mail:user_mailbox.message.body:read", "mail:user_mailbox.message.subject:read", "mail:user_mailbox.message:readonly"},
-		Commands:    []string{"mail"},
-	},
-	"minutes": {
-		Name:        "minutes",
-		Description: "Meeting recordings and transcripts",
-		Scopes:      []string{"minutes:minutes:readonly", "minutes:minute:download"},
-		Commands:    []string{"minutes"},
-	},
+	// "mail" and "minutes" groups removed: require company-level scope approval
 }
 
 // AllGroupNames returns all scope group names in a consistent order
 func AllGroupNames() []string {
-	return []string{"calendar", "contacts", "documents", "bitable", "messages", "mail", "minutes"}
+	return []string{"calendar", "contacts", "documents", "bitable", "messages"}
 }
 
 // GetScopesForGroups returns the combined scopes for the given group names
