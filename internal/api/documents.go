@@ -249,6 +249,72 @@ func (c *Client) DownloadDriveFileWithTenant(fileToken string) (io.ReadCloser, s
 	return c.DownloadWithTenantToken(path)
 }
 
+// ConvertMarkdown converts markdown content to document blocks
+// content: markdown content to convert
+// Returns the converted document blocks
+func (c *Client) ConvertMarkdown(content string) ([]DocumentBlock, error) {
+	req := ConvertMarkdownRequest{
+		Content:     content,
+		ContentType: "markdown",
+	}
+
+	var resp ConvertMarkdownResponse
+	if err := c.Post("/docx/v1/documents/blocks/convert", req, &resp); err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("API error %d: %s", resp.Code, resp.Msg)
+	}
+
+	return resp.Data.Blocks, nil
+}
+
+// WriteMarkdownToDocument writes markdown content to a document
+// documentID: the document ID
+// markdown: markdown content to write
+// index: insertion position (-1 for end)
+// Returns the created blocks and revision ID
+func (c *Client) WriteMarkdownToDocument(documentID string, markdown string, index int) ([]DocumentBlock, int, error) {
+	// Convert markdown to blocks
+	blocks, err := c.ConvertMarkdown(markdown)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if len(blocks) == 0 {
+		return nil, 0, fmt.Errorf("no blocks were converted from markdown")
+	}
+
+	// Create blocks in the document
+	return c.CreateDocumentBlocks(documentID, documentID, blocks, index)
+}
+
+// CreateDocumentWithMarkdown creates a new document with markdown content
+// title: document title
+// folderToken: optional folder token (empty for root)
+// markdown: initial markdown content
+// Returns the created document and blocks
+func (c *Client) CreateDocumentWithMarkdown(title, folderToken string, markdown string) (*Document, []DocumentBlock, int, error) {
+	// Create empty document first
+	doc, err := c.CreateDocument(title, folderToken)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	if markdown == "" {
+		return doc, nil, doc.RevisionID, nil
+	}
+
+	// Write markdown content
+	blocks, revisionID, err := c.WriteMarkdownToDocument(doc.DocumentID, markdown, -1)
+	if err != nil {
+		return doc, nil, doc.RevisionID, err
+	}
+
+	return doc, blocks, revisionID, nil
+}
+
 // SearchDocuments searches for documents using the Lark Docs API
 // query: search keyword (required)
 // ownerIDs: optional filter by owner user IDs

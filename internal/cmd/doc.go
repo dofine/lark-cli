@@ -628,35 +628,87 @@ var docCreateCmd = &cobra.Command{
 	Short: "Create a new document",
 	Long: `Create a new Lark document.
 
-Creates an empty document with the specified title.
+Creates a new document with the specified title.
 Optionally specify a folder to create the document in.
+Optionally provide initial markdown content.
+
+Markdown content can be provided via:
+  - --markdown flag: inline markdown text
+  - --file flag: read from a markdown file
+  - stdin: pipe markdown content
 
 Examples:
   lark doc create --title "My Document"
-  lark doc create --title "Project Plan" --folder fldbcRho46N6...`,
+  lark doc create --title "Project Plan" --folder fldbcRho46N6...
+  lark doc create --title "Notes" --markdown "# Heading\n\nContent"
+  lark doc create --title "Notes" --file content.md
+  cat content.md | lark doc create --title "Notes"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		title, _ := cmd.Flags().GetString("title")
 		folderToken, _ := cmd.Flags().GetString("folder")
+		markdownText, _ := cmd.Flags().GetString("markdown")
+		inputFile, _ := cmd.Flags().GetString("file")
 
 		if title == "" {
 			output.Fatal("MISSING_ARG", fmt.Errorf("--title is required"))
 		}
 
+		var markdown string
+		switch {
+		case markdownText != "":
+			markdown = unescapeString(markdownText)
+		case inputFile != "":
+			data, err := os.ReadFile(inputFile)
+			if err != nil {
+				output.Fatal("FILE_ERROR", fmt.Errorf("failed to read file: %w", err))
+			}
+			markdown = string(data)
+		default:
+			// Check if stdin has data
+			stat, _ := os.Stdin.Stat()
+			if (stat.Mode() & os.ModeCharDevice) == 0 {
+				data, err := io.ReadAll(os.Stdin)
+				if err != nil {
+					output.Fatal("INPUT_ERROR", fmt.Errorf("failed to read stdin: %w", err))
+				}
+				markdown = string(data)
+			}
+		}
+
 		client := api.NewClient()
 
-		doc, err := client.CreateDocument(title, folderToken)
-		if err != nil {
-			output.Fatal("API_ERROR", err)
-		}
+		if markdown == "" {
+			// Create empty document
+			doc, err := client.CreateDocument(title, folderToken)
+			if err != nil {
+				output.Fatal("API_ERROR", err)
+			}
 
-		result := api.OutputDocumentCreate{
-			Success:    true,
-			DocumentID: doc.DocumentID,
-			RevisionID: doc.RevisionID,
-			Title:      doc.Title,
-		}
+			result := api.OutputDocumentCreate{
+				Success:    true,
+				DocumentID: doc.DocumentID,
+				RevisionID: doc.RevisionID,
+				Title:      doc.Title,
+			}
 
-		output.JSON(result)
+			output.JSON(result)
+		} else {
+			// Create document with markdown content
+			doc, blocks, revisionID, err := client.CreateDocumentWithMarkdown(title, folderToken, markdown)
+			if err != nil {
+				output.Fatal("API_ERROR", err)
+			}
+
+			result := api.OutputDocumentCreateWithMarkdown{
+				Success:    true,
+				DocumentID: doc.DocumentID,
+				RevisionID: revisionID,
+				Title:      doc.Title,
+				BlockCount: len(blocks),
+			}
+
+			output.JSON(result)
+		}
 	},
 }
 
@@ -833,6 +885,78 @@ Examples:
 	},
 }
 
+// --- doc write-markdown ---
+
+var docWriteMarkdownCmd = &cobra.Command{
+	Use:   "write-markdown <document_id>",
+	Short: "Write markdown content to a document",
+	Long: `Write markdown content to a Lark document.
+
+The markdown is automatically converted to Lark document blocks using
+Feishu's convert API.
+
+Content can be provided via:
+  - --text flag: inline markdown text
+  - --file flag: read from a markdown file
+  - stdin: pipe markdown content
+
+Examples:
+  lark doc write-markdown ABC123xyz --text "# Heading\n\nSome text"
+  lark doc write-markdown ABC123xyz --file content.md
+  cat content.md | lark doc write-markdown ABC123xyz
+  lark doc write-markdown ABC123xyz --text "## Section" --index 0`,
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		documentID := args[0]
+		markdownText, _ := cmd.Flags().GetString("text")
+		inputFile, _ := cmd.Flags().GetString("file")
+		index, _ := cmd.Flags().GetInt("index")
+
+		var markdown string
+		var err error
+
+		switch {
+		case markdownText != "":
+			// Use text from flag (unescape escape sequences)
+			markdown = unescapeString(markdownText)
+		case inputFile != "":
+			// Read from file
+			data, err := os.ReadFile(inputFile)
+			if err != nil {
+				output.Fatal("FILE_ERROR", fmt.Errorf("failed to read file: %w", err))
+			}
+			markdown = string(data)
+		default:
+			// Read from stdin
+			data, err := io.ReadAll(os.Stdin)
+			if err != nil {
+				output.Fatal("INPUT_ERROR", fmt.Errorf("failed to read stdin: %w", err))
+			}
+			markdown = string(data)
+		}
+
+		if markdown == "" {
+			output.Fatal("MISSING_ARG", fmt.Errorf("no markdown content provided (use --text, --file, or pipe from stdin)"))
+		}
+
+		client := api.NewClient()
+
+		blocks, revisionID, err := client.WriteMarkdownToDocument(documentID, markdown, index)
+		if err != nil {
+			output.Fatal("API_ERROR", err)
+		}
+
+		result := api.OutputDocumentWriteMarkdown{
+			Success:            true,
+			DocumentID:         documentID,
+			DocumentRevisionID: revisionID,
+			BlockCount:         len(blocks),
+		}
+
+		output.JSON(result)
+	},
+}
+
 // codeLanguageHelp returns a string listing code language IDs for the help text
 func codeLanguageHelp() string {
 	return "Common language IDs: 1=PlainText, 7=Bash, 8=C#, 9=C++, 10=C, 12=CSS, 22=Go, 24=HTML, 28=JSON, 29=Java, 30=JavaScript, 32=Kotlin, 49=Python, 52=Ruby, 53=Rust, 56=SQL, 61=Swift, 63=TypeScript, 67=YAML"
@@ -852,6 +976,7 @@ func init() {
 	docCmd.AddCommand(docDownloadCmd)
 	docCmd.AddCommand(docCreateCmd)
 	docCmd.AddCommand(docAppendCmd)
+	docCmd.AddCommand(docWriteMarkdownCmd)
 
 	// Flags for doc wiki-search
 	docWikiSearchCmd.Flags().String("space-id", "", "Filter to specific wiki space ID")
@@ -872,6 +997,8 @@ func init() {
 	// Flags for doc create
 	docCreateCmd.Flags().String("title", "", "Document title (required)")
 	docCreateCmd.Flags().String("folder", "", "Folder token to create document in (default: root)")
+	docCreateCmd.Flags().String("markdown", "", "Initial markdown content")
+	docCreateCmd.Flags().String("file", "", "Read initial markdown content from file")
 
 	// Flags for doc append
 	docAppendCmd.Flags().String("block-id", "", "Parent block ID (default: document root)")
@@ -886,4 +1013,9 @@ func init() {
 	docAppendCmd.Flags().Bool("divider", false, "Append a divider")
 	docAppendCmd.Flags().Bool("json", false, "Read raw block JSON from stdin")
 	docAppendCmd.Flags().Int("index", -1, "Insertion position (-1=end, 0=beginning)")
+
+	// Flags for doc write-markdown
+	docWriteMarkdownCmd.Flags().String("text", "", "Markdown text content")
+	docWriteMarkdownCmd.Flags().String("file", "", "Read markdown from file")
+	docWriteMarkdownCmd.Flags().Int("index", -1, "Insertion position (-1=end, 0=beginning)")
 }

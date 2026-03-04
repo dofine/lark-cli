@@ -719,6 +719,21 @@ type CreateBlockChildrenResponse struct {
 	} `json:"data,omitempty"`
 }
 
+// ConvertMarkdownRequest is the request body for POST /docx/v1/document/convert
+type ConvertMarkdownRequest struct {
+	Content      string `json:"content"`                // Markdown content
+	ContentType  string `json:"content_type"`           // "markdown" or "html"
+	ResourceType string `json:"resource_type,omitempty"` // "docx"
+}
+
+// ConvertMarkdownResponse is the response from convert API
+type ConvertMarkdownResponse struct {
+	BaseResponse
+	Data struct {
+		Blocks []DocumentBlock `json:"blocks,omitempty"`
+	} `json:"data,omitempty"`
+}
+
 // OutputDocumentCreate is the create document response for CLI
 type OutputDocumentCreate struct {
 	Success    bool   `json:"success"`
@@ -732,6 +747,23 @@ type OutputDocumentAppend struct {
 	Success            bool            `json:"success"`
 	DocumentRevisionID int             `json:"document_revision_id"`
 	Blocks             []DocumentBlock `json:"blocks,omitempty"`
+}
+
+// OutputDocumentWriteMarkdown is the write markdown response for CLI
+type OutputDocumentWriteMarkdown struct {
+	Success            bool   `json:"success"`
+	DocumentID         string `json:"document_id"`
+	DocumentRevisionID int    `json:"document_revision_id"`
+	BlockCount         int    `json:"block_count"`
+}
+
+// OutputDocumentCreateWithMarkdown is the create with markdown response for CLI
+type OutputDocumentCreateWithMarkdown struct {
+	Success    bool   `json:"success"`
+	DocumentID string `json:"document_id"`
+	RevisionID int    `json:"revision_id"`
+	Title      string `json:"title"`
+	BlockCount int    `json:"block_count,omitempty"`
 }
 
 // --- Document CLI Output Types ---
