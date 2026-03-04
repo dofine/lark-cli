@@ -20,18 +20,33 @@ A CLI tool for interacting with Lark APIs (calendar, contacts, documents). Desig
    - `im:message.reactions:read` (list reactions)
    - `im:message.reactions:write_only` (add/remove reactions)
    - `offline_access` (for refresh tokens)
-3. Add redirect URI: `http://localhost:9999/callback`
+3. Add redirect URI: `http://localhost:9999/callback` (port must match `oauth.redirect_port` in config, default is 9999)
 4. Enable "Refresh user_access_token" in Security Settings
 5. Note your App ID and App Secret
 
 ### 2. Configure
 
-Copy the example config:
+**Recommended:** Set `LARK_CONFIG_DIR` environment variable for a cleaner setup:
 ```bash
-cp config.example.yaml .lark/config.yaml
+export LARK_CONFIG_DIR="~/.config/lark"  # Standard location for configuration files
 ```
 
-Edit `.lark/config.yaml`:
+Create the config directory:
+```bash
+mkdir -p "$LARK_CONFIG_DIR"
+```
+
+Copy the example config:
+```bash
+cp config.example.yaml "$LARK_CONFIG_DIR/config.yaml"
+```
+
+Edit the config file:
+```bash
+vim "$LARK_CONFIG_DIR/config.yaml"
+```
+
+Config content (minimal):
 ```yaml
 app_id: "cli_xxxxxxxxxx"  # Your App ID
 ```
@@ -41,40 +56,77 @@ Set your app secret as environment variable:
 export LARK_APP_SECRET="your_app_secret"
 ```
 
-### 3. Authenticate
+**Alternative:** If you prefer the default location, skip setting `LARK_CONFIG_DIR` and use:
+```bash
+cp config.example.yaml .lark/config.yaml
+vim .lark/config.yaml
+```
+
+### 3. Build and Install
+
+**Build the binary:**
+```bash
+make build  # Builds binary to lark
+```
+
+**Recommended: Install to system PATH**
+
+Option 1: Use make install (installs to $GOPATH/bin)
+```bash
+make install
+```
+
+Option 2: Manually copy to a system PATH directory (e.g. `~/.local/bin`)
+```bash
+cp lark ~/.local/bin/
+```
+
+Option 3: Add the current directory to your PATH temporarily
+```bash
+export PATH=".:$PATH"
+```
+
+Option 4: Add the current directory to your PATH permanently (for bash/zsh)
+```bash
+echo 'export PATH="$(pwd):$PATH"' >> ~/.bashrc  # For bash
+echo 'export PATH="$(pwd):$PATH"' >> ~/.zshrc   # For zsh
+source ~/.bashrc  # Or ~/.zshrc to reload
+```
+
+### 4. Authenticate
 
 ```bash
-./lark auth login
+lark auth login  # Use just "lark" if binary is in PATH, otherwise lark
 ```
 
 This opens a browser for OAuth authorization.
 
 ## Commands
 
-All commands output JSON by default.
+All commands output JSON by default. If the `lark` binary is not in your system PATH, use the full path to the binary (e.g., `lark` or `~/.local/bin/lark`).
 
 ### Authentication
 
 ```bash
 # Login with all permissions (default)
-./lark auth login
+lark auth login
 
 # Login with specific scope groups only
-./lark auth login --scopes calendar           # Only calendar permissions
-./lark auth login --scopes calendar,contacts  # Calendar and contacts
+lark auth login --scopes calendar           # Only calendar permissions
+lark auth login --scopes calendar,contacts  # Calendar and contacts
 
 # Add permissions incrementally (without losing existing ones)
-./lark auth login --add --scopes messages
+lark auth login --add --scopes messages
 
 # Check authentication status (shows granted scopes)
-./lark auth status
+lark auth status
 # Output: {"authenticated": true, "expires_at": "...", "granted_groups": ["calendar", "contacts"], ...}
 
 # List available scope groups
-./lark auth scopes
+lark auth scopes
 
 # Logout (clear stored tokens)
-./lark auth logout
+lark auth logout
 ```
 
 #### Scope Groups
@@ -96,19 +148,19 @@ By default, `lark auth login` requests all scopes. Use `--scopes` for minimal pe
 
 ```bash
 # Today's events (default)
-./lark cal list
+lark cal list
 
 # This week
-./lark cal list --week
+lark cal list --week
 
 # Custom date range (ISO 8601)
-./lark cal list --from 2026-01-02 --to 2026-01-05
+lark cal list --from 2026-01-02 --to 2026-01-05
 
 # Events awaiting your RSVP
-./lark cal list --pending --from 2026-01-02 --to 2026-01-31
+lark cal list --pending --from 2026-01-02 --to 2026-01-31
 
 # With conflict detection
-./lark cal list --week --detect-conflicts --buffer-minutes 15
+lark cal list --week --detect-conflicts --buffer-minutes 15
 ```
 
 Output format:
@@ -131,14 +183,14 @@ Output format:
 #### Show Event
 
 ```bash
-./lark cal show <event-id>
+lark cal show <event-id>
 ```
 
 #### Create Event
 
 ```bash
 # With explicit end time
-./lark cal create \
+lark cal create \
   --summary "Team standup" \
   --start "2026-01-03T09:00:00+08:00" \
   --end "2026-01-03T09:30:00+08:00" \
@@ -146,10 +198,10 @@ Output format:
   --description "Daily sync"
 
 # With duration
-./lark cal create --summary "1:1" --start "2026-01-03T14:00:00+08:00" --duration 30m
+lark cal create --summary "1:1" --start "2026-01-03T14:00:00+08:00" --duration 30m
 
 # With attendees
-./lark cal create \
+lark cal create \
   --summary "Sync" \
   --start "2026-01-03T14:00:00+08:00" \
   --duration 1h \
@@ -172,10 +224,10 @@ Flags:
 #### Update Event
 
 ```bash
-./lark cal update <event-id> --summary "New title"
-./lark cal update <event-id> --start "2026-01-03T10:00:00+08:00"
-./lark cal update <event-id> --location "New location"
-./lark cal update <event-id> --visibility public
+lark cal update <event-id> --summary "New title"
+lark cal update <event-id> --start "2026-01-03T10:00:00+08:00"
+lark cal update <event-id> --location "New location"
+lark cal update <event-id> --visibility public
 ```
 
 Flags:
@@ -191,40 +243,40 @@ Flags:
 #### Delete Event
 
 ```bash
-./lark cal delete <event-id>
+lark cal delete <event-id>
 ```
 
 #### Search Events
 
 ```bash
-./lark cal search "standup"
-./lark cal search "1:1" --from 2026-01-01 --to 2026-01-31
+lark cal search "standup"
+lark cal search "1:1" --from 2026-01-01 --to 2026-01-31
 ```
 
 #### Query Availability (Free/Busy)
 
 ```bash
 # Check your own availability
-./lark cal freebusy --from 2026-01-03T09:00:00+08:00 --to 2026-01-03T18:00:00+08:00
+lark cal freebusy --from 2026-01-03T09:00:00+08:00 --to 2026-01-03T18:00:00+08:00
 
 # Check another user's availability
-./lark cal freebusy --from 2026-01-03 --to 2026-01-03 --user ou_xxxxxxxxxx
+lark cal freebusy --from 2026-01-03 --to 2026-01-03 --user ou_xxxxxxxxxx
 
 # Check a meeting room's availability
-./lark cal freebusy --from 2026-01-06 --to 2026-01-10 --room omm_xxxxxxxxxx
+lark cal freebusy --from 2026-01-06 --to 2026-01-10 --room omm_xxxxxxxxxx
 ```
 
 #### RSVP to Event
 
 ```bash
 # Accept an invitation
-./lark cal rsvp <event-id> --accept
+lark cal rsvp <event-id> --accept
 
 # Decline an invitation
-./lark cal rsvp <event-id> --decline
+lark cal rsvp <event-id> --decline
 
 # Mark as tentative
-./lark cal rsvp <event-id> --tentative
+lark cal rsvp <event-id> --tentative
 ```
 
 ### Contacts
@@ -233,26 +285,26 @@ Flags:
 
 ```bash
 # Look up by open_id (default)
-./lark contact get ou_xxxx
+lark contact get ou_xxxx
 
 # Look up by user_id
-./lark contact get 12345 --id-type user_id
+lark contact get 12345 --id-type user_id
 ```
 
 #### List Users in Department
 
 ```bash
 # List users in root department
-./lark contact list-dept
+lark contact list-dept
 
 # List users in specific department
-./lark contact list-dept od_xxxx
+lark contact list-dept od_xxxx
 ```
 
 #### Search Departments
 
 ```bash
-./lark contact search-dept "Engineering"
+lark contact search-dept "Engineering"
 ```
 
 ### Messages
@@ -261,22 +313,22 @@ Flags:
 
 ```bash
 # Get messages from a group chat
-./lark msg history --chat-id oc_xxxxx
+lark msg history --chat-id oc_xxxxx
 
 # Get messages with limit
-./lark msg history --chat-id oc_xxxxx --limit 50
+lark msg history --chat-id oc_xxxxx --limit 50
 
 # Get messages in a time range (Unix timestamp)
-./lark msg history --chat-id oc_xxxxx --start 1704067200 --end 1704153600
+lark msg history --chat-id oc_xxxxx --start 1704067200 --end 1704153600
 
 # Get messages in a time range (ISO 8601)
-./lark msg history --chat-id oc_xxxxx --start 2026-01-02 --end 2026-01-03
+lark msg history --chat-id oc_xxxxx --start 2026-01-02 --end 2026-01-03
 
 # Sort by newest first
-./lark msg history --chat-id oc_xxxxx --sort desc
+lark msg history --chat-id oc_xxxxx --sort desc
 
 # Get thread messages
-./lark msg history --chat-id thread_xxxxx --type thread
+lark msg history --chat-id thread_xxxxx --type thread
 ```
 
 Flags:
@@ -321,10 +373,10 @@ Download resource files (images, videos, audios, files) from messages.
 
 ```bash
 # Download an image from a message
-./lark msg resource --message-id om_xxx --file-key img_v2_xxx --type image --output ./image.png
+lark msg resource --message-id om_xxx --file-key img_v2_xxx --type image --output ./image.png
 
 # Download a file/video/audio from a message
-./lark msg resource --message-id om_xxx --file-key file_v2_xxx --type file --output ./video.mp4
+lark msg resource --message-id om_xxx --file-key file_v2_xxx --type file --output ./video.mp4
 ```
 
 Flags:
@@ -353,40 +405,40 @@ Send messages to users or group chats as the bot.
 
 ```bash
 # Send simple text to user
-./lark msg send --to ou_xxxx --text "Hello!"
+lark msg send --to ou_xxxx --text "Hello!"
 
 # Send to group chat
-./lark msg send --to oc_xxxx --text "Meeting starting soon"
+lark msg send --to oc_xxxx --text "Meeting starting soon"
 
 # Text with line breaks (\n creates actual newlines)
-./lark msg send --to ou_xxxx --text "Line 1\nLine 2\nLine 3"
+lark msg send --to ou_xxxx --text "Line 1\nLine 2\nLine 3"
 
 # For literal backslash-n, use double backslash
-./lark msg send --to ou_xxxx --text "Show literal \\n text"
+lark msg send --to ou_xxxx --text "Show literal \\n text"
 
 # Bold and italic
-./lark msg send --to oc_xxxx --text "**Status:** *Green*"
+lark msg send --to oc_xxxx --text "**Status:** *Green*"
 
 # Mention users with @{open_id}
-./lark msg send --to oc_xxxx --text "Please review @{ou_user1}"
+lark msg send --to oc_xxxx --text "Please review @{ou_user1}"
 
 # With link
-./lark msg send --to ou_xxxx --text "Check this out [Our Docs](https://docs.example.com)"
+lark msg send --to ou_xxxx --text "Check this out [Our Docs](https://docs.example.com)"
 
 # Text + image
-./lark msg send --to oc_xxxx --text "Intro\n{{image}}\nMore details" --image ./diagram.png
+lark msg send --to oc_xxxx --text "Intro\n{{image}}\nMore details" --image ./diagram.png
 
 # Multiple images
-./lark msg send --to oc_xxxx --text "A\n{{image}}\nB\n{{image}}\nC" --image ./one.png --image ./two.png
+lark msg send --to oc_xxxx --text "A\n{{image}}\nB\n{{image}}\nC" --image ./one.png --image ./two.png
 
 # Image only
-./lark msg send --to oc_xxxx --image ./screenshot.png
+lark msg send --to oc_xxxx --image ./screenshot.png
 
 # Reply in thread
-./lark msg send --to oc_xxxx --parent-id om_xxxx --msg-type text --text "Replying here"
+lark msg send --to oc_xxxx --parent-id om_xxxx --msg-type text --text "Replying here"
 
 # Reply inside an existing thread
-./lark msg send --to oc_xxxx --root-id om_root --parent-id om_parent --text "Follow-up"
+lark msg send --to oc_xxxx --root-id om_root --parent-id om_parent --text "Follow-up"
 ```
 
 Markdown-lite syntax supported:
@@ -428,10 +480,10 @@ Add a reaction to a message as the bot.
 
 ```bash
 # Add a reaction by emoji type
-./lark msg react --message-id om_dc13264520392913993dd051dba21dcf --reaction SMILE
+lark msg react --message-id om_dc13264520392913993dd051dba21dcf --reaction SMILE
 
 # Add a reaction with explicit type
-./lark msg react --message-id om_dc13264520392913993dd051dba21dcf --reaction "+1" --type emoji
+lark msg react --message-id om_dc13264520392913993dd051dba21dcf --reaction "+1" --type emoji
 ```
 
 Flags:
@@ -458,7 +510,7 @@ Output:
 Show the official emoji catalog reference and common examples.
 
 ```bash
-./lark msg react emojis
+lark msg react emojis
 ```
 
 #### Custom Emojis
@@ -473,7 +525,7 @@ custom_emojis:
 
 Use custom emoji IDs when adding reactions:
 ```bash
-./lark msg react --message-id om_xxx --reaction 7405453485858095136
+lark msg react --message-id om_xxx --reaction 7405453485858095136
 ```
 
 Custom emojis appear in the `lark msg react emojis` output under `custom_emojis`.
@@ -484,13 +536,13 @@ List reactions for a message.
 
 ```bash
 # List all reactions
-./lark msg react list --message-id om_dc13264520392913993dd051dba21dcf
+lark msg react list --message-id om_dc13264520392913993dd051dba21dcf
 
 # Filter by emoji type
-./lark msg react list --message-id om_dc13264520392913993dd051dba21dcf --reaction SMILE
+lark msg react list --message-id om_dc13264520392913993dd051dba21dcf --reaction SMILE
 
 # Limit results
-./lark msg react list --message-id om_dc13264520392913993dd051dba21dcf --limit 50
+lark msg react list --message-id om_dc13264520392913993dd051dba21dcf --limit 50
 ```
 
 Flags:
@@ -520,7 +572,7 @@ Output:
 Remove a reaction from a message.
 
 ```bash
-./lark msg react remove --message-id om_dc13264520392913993dd051dba21dcf --reaction-id ZCaCIjUBVVWSrm5L-3ZTw...
+lark msg react remove --message-id om_dc13264520392913993dd051dba21dcf --reaction-id ZCaCIjUBVVWSrm5L-3ZTw...
 ```
 
 Flags:
@@ -544,7 +596,7 @@ Recall/delete a previously sent message.
 
 ```bash
 # Recall a message by ID
-./lark msg recall om_dc13264520392913993dd051dba21dcf
+lark msg recall om_dc13264520392913993dd051dba21dcf
 ```
 
 Output:
@@ -563,14 +615,14 @@ Output:
 
 ```bash
 # Search by keyword
-./lark doc search "project plan"
+lark doc search "project plan"
 
 # Filter by document type
-./lark doc search "budget" --type sheet
-./lark doc search "meeting notes" --type doc --type sheet
+lark doc search "budget" --type sheet
+lark doc search "meeting notes" --type doc --type sheet
 
 # Filter by owner
-./lark doc search "report" --owner ou_xxxx
+lark doc search "report" --owner ou_xxxx
 ```
 
 Flags:
@@ -603,10 +655,10 @@ Output:
 
 ```bash
 # List items in root cloud space
-./lark doc list
+lark doc list
 
 # List items in specific folder
-./lark doc list fldbcRho46N6MQ3mJkOAuPabcef
+lark doc list fldbcRho46N6MQ3mJkOAuPabcef
 ```
 
 Output:
@@ -640,7 +692,7 @@ For shortcuts, a `shortcut_info` field is included with `target_type` and `targe
 #### Resolve Wiki Node
 
 ```bash
-./lark doc wiki <node-token>
+lark doc wiki <node-token>
 ```
 
 Resolve a wiki node token to get the underlying document information. The node_token is from the wiki URL. For example:
@@ -666,13 +718,13 @@ Use the `obj_token` value with `doc get` to retrieve the document content.
 
 ```bash
 # Search all wikis by keyword
-./lark doc wiki-search "meeting notes"
+lark doc wiki-search "meeting notes"
 
 # Filter by wiki space
-./lark doc wiki-search "PRD" --space-id 7344964278161604639
+lark doc wiki-search "PRD" --space-id 7344964278161604639
 
 # Search within a specific node and its children
-./lark doc wiki-search "design" --space-id 7344964278161604639 --node-id ABC123xyz
+lark doc wiki-search "design" --space-id 7344964278161604639 --node-id ABC123xyz
 ```
 
 Searches for wiki nodes by keyword. Returns wiki nodes the user has permission to view.
@@ -706,7 +758,7 @@ Use the `obj_token` value with `doc get` to retrieve the document content.
 #### Get Document as Markdown
 
 ```bash
-./lark doc get <document-id>
+lark doc get <document-id>
 ```
 
 The document_id is the token from the document URL. For example:
@@ -725,7 +777,7 @@ Output:
 #### Get Document Block Structure
 
 ```bash
-./lark doc blocks <document-id>
+lark doc blocks <document-id>
 ```
 
 Returns the full block structure as JSON. Useful for programmatic manipulation.
@@ -756,7 +808,7 @@ Block types:
 #### Get Document Comments
 
 ```bash
-./lark doc comments <document-id>
+lark doc comments <document-id>
 ```
 
 Retrieves all comments from a document, including replies.
@@ -798,22 +850,22 @@ For large documents, use `jq` and `grep` to extract specific information:
 
 ```bash
 # Get document outline (headings only)
-./lark doc get <id> | jq -r '.content' | grep -E '^#{1,6} '
+lark doc get <id> | jq -r '.content' | grep -E '^#{1,6} '
 
 # Get title only
-./lark doc get <id> | jq -r '.title'
+lark doc get <id> | jq -r '.title'
 
 # Search for keyword with context
-./lark doc get <id> | jq -r '.content' | grep -i -C 3 "keyword"
+lark doc get <id> | jq -r '.content' | grep -i -C 3 "keyword"
 
 # Quick stats
-./lark doc blocks <id> | jq '{title, block_count}'
+lark doc blocks <id> | jq '{title, block_count}'
 
 # Extract all todo items (block type 17)
-./lark doc blocks <id> | jq '[.blocks[] | select(.block_type == 17)]'
+lark doc blocks <id> | jq '[.blocks[] | select(.block_type == 17)]'
 
 # Count blocks by type
-./lark doc blocks <id> | jq '.blocks | group_by(.block_type) | map({type: .[0].block_type, count: length})'
+lark doc blocks <id> | jq '.blocks | group_by(.block_type) | map({type: .[0].block_type, count: length})'
 ```
 
 #### Size Comparison
@@ -833,7 +885,7 @@ Email access via IMAP with local caching for fast search.
 
 ```bash
 # Configure IMAP credentials (interactive)
-./lark mail setup
+lark mail setup
 ```
 
 This prompts for:
@@ -852,7 +904,7 @@ To get your IMAP credentials, see: https://www.larksuite.com/hc/en-US/articles/3
 #### Check Status
 
 ```bash
-./lark mail status
+lark mail status
 ```
 
 Output:
@@ -876,7 +928,7 @@ Output:
 #### List Mailboxes
 
 ```bash
-./lark mail list
+lark mail list
 ```
 
 Output:
@@ -893,13 +945,13 @@ Fetch new emails from the server into the local cache.
 
 ```bash
 # Sync INBOX (default)
-./lark mail sync
+lark mail sync
 
 # Sync with more parallel connections (faster for large mailboxes)
-./lark mail sync --workers 20
+lark mail sync --workers 20
 
 # Sync specific mailbox
-./lark mail sync --mailbox Sent
+lark mail sync --mailbox Sent
 ```
 
 Flags:
@@ -924,22 +976,22 @@ Search the local cache (no network calls, very fast).
 
 ```bash
 # List recent emails
-./lark mail search
+lark mail search
 
 # Filter by sender
-./lark mail search --from alice@example.com
+lark mail search --from alice@example.com
 
 # Filter by subject
-./lark mail search --subject "Q4 Report"
+lark mail search --subject "Q4 Report"
 
 # Filter by date range
-./lark mail search --since 2026-01-01 --before 2026-01-15
+lark mail search --since 2026-01-01 --before 2026-01-15
 
 # Combined filters with limit
-./lark mail search --from boss@example.com --since 2026-01-01 --limit 10
+lark mail search --from boss@example.com --since 2026-01-01 --limit 10
 
 # Different mailbox
-./lark mail search --mailbox Sent --from me@example.com
+lark mail search --mailbox Sent --from me@example.com
 ```
 
 Output:
@@ -970,7 +1022,7 @@ Output:
 Fetch and display the full content of an email by UID.
 
 ```bash
-./lark mail show --uid 4521
+lark mail show --uid 4521
 ```
 
 Output:
@@ -994,10 +1046,10 @@ Save an email as a standard .eml file.
 
 ```bash
 # Download to current directory
-./lark mail fetch --uid 4521
+lark mail fetch --uid 4521
 
 # Download to specific directory
-./lark mail fetch --uid 4521 --output ./emails/
+lark mail fetch --uid 4521 --output ./emails/
 ```
 
 Output:
@@ -1018,7 +1070,7 @@ Access Lark Minutes meeting recordings.
 #### Get Minutes Metadata
 
 ```bash
-./lark minutes get <minute-token>
+lark minutes get <minute-token>
 ```
 
 The minute token is from the Minutes URL:
@@ -1042,19 +1094,19 @@ Output:
 
 ```bash
 # Plain text transcript
-./lark minutes transcript <minute-token>
+lark minutes transcript <minute-token>
 
 # SRT format (for subtitles)
-./lark minutes transcript <minute-token> --format srt
+lark minutes transcript <minute-token> --format srt
 
 # Include speaker names
-./lark minutes transcript <minute-token> --speaker
+lark minutes transcript <minute-token> --speaker
 
 # Include timestamps
-./lark minutes transcript <minute-token> --timestamp
+lark minutes transcript <minute-token> --timestamp
 
 # Save to file
-./lark minutes transcript <minute-token> --output transcript.txt
+lark minutes transcript <minute-token> --output transcript.txt
 ```
 
 Flags:
@@ -1075,7 +1127,7 @@ Output:
 #### Get Media Download URL
 
 ```bash
-./lark minutes media <minute-token>
+lark minutes media <minute-token>
 ```
 
 Returns a temporary download URL valid for 24 hours:

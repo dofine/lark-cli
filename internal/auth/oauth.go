@@ -75,7 +75,7 @@ func LoginWithOptions(opts LoginOptions) error {
 	appSecret := config.GetAppSecret()
 
 	if appID == "" {
-		return fmt.Errorf("app_id not configured. Set it in .lark-cal/config.yaml or LARK_APP_ID env var")
+		return fmt.Errorf("app_id not configured. Set it in ${LARK_CONFIG_DIR}/config.yaml or LARK_APP_ID env var")
 	}
 	if appSecret == "" {
 		return fmt.Errorf("app_secret not configured. Set LARK_APP_SECRET env var")
