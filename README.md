@@ -23,13 +23,37 @@ The result: AI assistants can interact with Lark using fewer tokens, leaving mor
 - **Mail** - Read and search emails via IMAP with local caching
 - **Minutes** - Get meeting recording metadata, export transcripts, download media
 
+## Fork Differences
+
+This is a fork of [yjwong/lark-cli](https://github.com/yjwong/lark-cli) with the following changes:
+
+### Feishu (China) Region Support
+
+The original project only supports Lark (international). This fork adds support for Feishu (China) by setting `region: "feishu"` in config or `LARK_REGION=feishu` as environment variable. This switches all OAuth and API endpoints from `larksuite.com` to `feishu.cn`.
+
+### Reduced OAuth Scopes
+
+Some scopes require company admin approval on Feishu, which blocks normal login. This fork removes those scopes so you can authenticate without waiting for admin approval. The trade-off is that the following features are **unavailable**:
+
+| Removed Scope | Impact |
+|---|---|
+| `contact:department.organize:readonly` | Cannot view department org structure |
+| `docs:doc:readonly` | Cannot read legacy Docs (new Docx still works) |
+| `drive:drive:readonly` | Cannot browse Drive root folder |
+| `space:document:retrieve` | Cannot retrieve wiki space documents |
+| `mail:*` (4 scopes) | Mail commands do not work |
+| `minutes:*` (2 scopes) | Minutes commands do not work |
+
 ## Quick Start
 
-1. Create a Lark app at https://open.larksuite.com with appropriate permissions
+1. Create an app at the Developer Console:
+   - Lark: https://open.larksuite.com
+   - Feishu: https://open.feishu.cn
 2. Copy `config.example.yaml` to `.lark/config.yaml` and add your App ID
 3. Set `LARK_APP_SECRET` environment variable
-4. Run `./lark auth login` to authenticate
-5. Start using: `./lark cal list --week`
+4. (Feishu users) Set `LARK_REGION=feishu` or add `region: "feishu"` to config
+5. Run `./lark auth login` to authenticate
+6. Start using: `./lark cal list --week`
 
 See [USAGE.md](USAGE.md) for full documentation.
 
