@@ -2,18 +2,6 @@
 
 A CLI tool for interacting with Lark/Feishu APIs, designed for use with Claude Code and other AI assistants.
 
-## Why This Tool?
-
-The official Lark MCP server exists, but its tools are not token-efficient. Each tool call returns verbose responses that consume significant context window space when used with AI assistants.
-
-This CLI addresses that by:
-
-- **Returning compact JSON** - Structured output optimized for programmatic consumption
-- **Providing markdown conversion** - Documents are converted to markdown (~2-3x smaller than raw block structures)
-- **Supporting selective queries** - Fetch only what you need (e.g., just event IDs, just document titles)
-
-The result: AI assistants can interact with Lark using fewer tokens, leaving more context for actual work.
-
 ## Features
 
 - **Calendar** - List, create, update, delete events; check availability; find common free time; RSVP
@@ -43,6 +31,18 @@ Some scopes require company admin approval on Feishu, which blocks normal login.
 | `space:document:retrieve` | Cannot retrieve wiki space documents |
 | `mail:*` (4 scopes) | Mail commands do not work |
 | `minutes:*` (2 scopes) | Minutes commands do not work |
+
+## Why This Tool?
+
+The official Lark MCP server exists, but its tools are not token-efficient. Each tool call returns verbose responses that consume significant context window space when used with AI assistants.
+
+This CLI addresses that by:
+
+- **Returning compact JSON** - Structured output optimized for programmatic consumption
+- **Providing markdown conversion** - Documents are converted to markdown (~2-3x smaller than raw block structures)
+- **Supporting selective queries** - Fetch only what you need (e.g., just event IDs, just document titles)
+
+The result: AI assistants can interact with Lark using fewer tokens, leaving more context for actual work.
 
 ## Quick Start
 
