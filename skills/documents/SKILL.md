@@ -1,6 +1,6 @@
 ---
 name: documents
-description: Read and write Lark documents - get content as markdown or blocks, create new documents, append content (text, headings, lists, code), list folders. Use when user asks about a Lark doc, wants to read/create/edit a document, or mentions a document URL/ID.
+description: Read and write Lark documents - get content as markdown or blocks, create new documents with markdown, write markdown to existing documents, append content (text, headings, lists, code), list folders. Use when user asks about a Lark doc, wants to read/create/edit a document, or mentions a document URL/ID.
 ---
 
 # Lark Documents Skill
@@ -267,22 +267,81 @@ Fields:
 ### Create a New Document
 
 ```bash
-lark doc create --title "My Document" [--folder <folder-token>]
+lark doc create --title "My Document" [--folder <folder-token>] [--markdown <content>] [--file <path>]
 ```
 
-Creates a new empty Lark document. Optionally specify a folder to create it in.
+Creates a new Lark document. Optionally specify a folder to create it in, and/or provide initial markdown content.
 
 Options:
 - `--title`: Document title (required)
 - `--folder`: Folder token to create the document in (default: root cloud space)
+- `--markdown`: Initial markdown content (inline)
+- `--file`: Read initial markdown content from a file
 
-Output:
+Markdown content can also be provided via stdin:
+```bash
+cat content.md | lark doc create --title "My Document"
+```
+
+Output (empty document):
 ```json
 {
   "success": true,
   "document_id": "BKlmdClegoCan5x5Rzbl73QQgEC",
   "revision_id": 1,
   "title": "My Document"
+}
+```
+
+Output (with markdown):
+```json
+{
+  "success": true,
+  "document_id": "BKlmdClegoCan5x5Rzbl73QQgEC",
+  "revision_id": 2,
+  "title": "My Document",
+  "block_count": 5
+}
+```
+
+### Write Markdown to Document
+
+```bash
+lark doc write-markdown <document-id> [--text <content>] [--file <path>] [--index <position>]
+```
+
+Writes markdown content to an existing document. The markdown is automatically converted to Lark document blocks using Feishu's convert API.
+
+Content options (one required):
+- `--text`: Markdown text content (inline, supports `\n` for line breaks)
+- `--file`: Read markdown from a file
+- stdin: Pipe markdown content
+
+Other options:
+- `--index`: Insertion position (-1=end, 0=beginning, default: -1)
+
+Examples:
+```bash
+# Write markdown via --text flag
+lark doc write-markdown ABC123xyz --text "# Heading\n\nSome text"
+
+# Write markdown from a file
+lark doc write-markdown ABC123xyz --file content.md
+
+# Pipe markdown content
+cat content.md | lark doc write-markdown ABC123xyz
+
+# Insert at the beginning
+lark doc write-markdown ABC123xyz --text "## Section" --index 0
+```
+
+Output:
+```json
+{
+  "success": true,
+  "document_id": "ABC123xyz",
+  "document_revision_id": 5,
+  "block_count": 3
 }
 ```
 
@@ -411,7 +470,9 @@ Output:
 | Download a file | `doc download` | Save Drive files locally |
 | Wiki URL | `doc wiki` then `doc get` | Must resolve wiki node first |
 | List wiki sub-pages | `doc wiki-children` | Browse wiki hierarchy |
-| Create a new document | `doc create` | Creates empty doc with title |
+| Create a new empty document | `doc create --title "..."` | Creates empty doc with title |
+| Create document with markdown | `doc create --title "..." --markdown "..."` | Create and initialize in one step |
+| Write markdown to existing doc | `doc write-markdown` | Convert markdown to Lark blocks automatically |
 | Append content to doc | `doc append` | Add text, headings, lists, code, etc. |
 | Read/summarize content | `doc get` | Markdown is compact (~90KB) |
 | Analyze structure | `doc blocks` | Full block hierarchy |
