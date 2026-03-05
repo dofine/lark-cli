@@ -32,6 +32,10 @@ Some scopes require company admin approval on Feishu, which blocks normal login.
 | `mail:*` (4 scopes) | Mail commands do not work |
 | `minutes:*` (2 scopes) | Minutes commands do not work |
 
+### Additional Features
+
+For a full list of enhancements added in this fork beyond the above, see the [GitHub Issues](https://github.com/dofine/lark-cli/issues?q=is%3Aissue).
+
 ## Why This Tool?
 
 The official Lark MCP server exists, but its tools are not token-efficient. Each tool call returns verbose responses that consume significant context window space when used with AI assistants.
