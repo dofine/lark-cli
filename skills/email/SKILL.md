@@ -24,7 +24,7 @@ Ensure `lark` is in your PATH, or use the full path to the binary. Set the confi
 ```bash
 lark mail <command>
 # Or with explicit config:
-LARK_CONFIG_DIR=/path/to/.lark lark mail <command>
+LARK_CONFIG_DIR=${HOME}/.config/lark lark mail <command>
 ```
 
 ## Commands Reference
