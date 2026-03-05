@@ -15,7 +15,7 @@ tools/bin/lark
 
 Run from the vault root directory with required env var:
 ```bash
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark sheet <command>
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark sheet <command>
 ```
 
 ## Commands Reference
@@ -151,22 +151,22 @@ The sheet_id can be found in the URL query parameter:
 
 ```bash
 # List all sheets first
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark sheet list T4mHsrFyzhXrj0tVzRslUGx8gkA
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark sheet list T4mHsrFyzhXrj0tVzRslUGx8gkA
 
 # Then read specific sheet
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark sheet read T4mHsrFyzhXrj0tVzRslUGx8gkA --sheet abc123 --range A1:D20
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark sheet read T4mHsrFyzhXrj0tVzRslUGx8gkA --sheet abc123 --range A1:D20
 ```
 
 ### Read Header Row Only
 
 ```bash
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark sheet read T4mHsrFyzhXrj0tVzRslUGx8gkA --range A1:Z1
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark sheet read T4mHsrFyzhXrj0tVzRslUGx8gkA --range A1:Z1
 ```
 
 ### Read First 50 Rows of Specific Sheet
 
 ```bash
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark sheet read T4mHsrFyzhXrj0tVzRslUGx8gkA --sheet def456 --range A1:Z50
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark sheet read T4mHsrFyzhXrj0tVzRslUGx8gkA --sheet def456 --range A1:Z50
 ```
 
 ## Efficient Extraction with jq
@@ -176,31 +176,31 @@ For large spreadsheets, use `jq` to extract specific data without loading everyt
 ### Get Column Headers
 
 ```bash
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark sheet read <token> --range A1:Z1 | jq '.values[0]'
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark sheet read <token> --range A1:Z1 | jq '.values[0]'
 ```
 
 ### Get Row Count
 
 ```bash
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark sheet read <token> | jq '.row_count'
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark sheet read <token> | jq '.row_count'
 ```
 
 ### Extract Specific Column (Column B)
 
 ```bash
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark sheet read <token> | jq '[.values[] | .[1]]'
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark sheet read <token> | jq '[.values[] | .[1]]'
 ```
 
 ### Find Rows Matching a Value
 
 ```bash
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark sheet read <token> | jq '[.values[] | select(.[0] == "SearchValue")]'
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark sheet read <token> | jq '[.values[] | select(.[0] == "SearchValue")]'
 ```
 
 ### Get First N Rows
 
 ```bash
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark sheet read <token> | jq '.values[:10]'
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark sheet read <token> | jq '.values[:10]'
 ```
 
 ## Output Format
@@ -229,12 +229,12 @@ Common error codes:
 This skill requires the `documents` scope group (uses `drive:drive:readonly`). If you see a `SCOPE_ERROR`, the user needs to add documents permissions:
 
 ```bash
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark auth login --add --scopes documents
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark auth login --add --scopes documents
 ```
 
 To check current permissions:
 ```bash
-LARK_CONFIG_DIR=tools/lark/.lark tools/bin/lark auth status
+LARK_CONFIG_DIR=${HOME}/.config/lark tools/bin/lark auth status
 ```
 
 ## Limitations
