@@ -12,6 +12,7 @@ Retrieve chat message history, send messages, manage reactions, and search for c
 - Send markdown-lite messages with links and mentions
 - Send images with `--image` and `{{image}}` placement
 - Reply to messages and threads with `--parent-id` / `--root-id`
+- Edit previously sent bot messages in-place
 - Message recall/delete for cleanup
 - Add/list/remove emoji reactions
 - Browse emoji catalog reference

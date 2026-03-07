@@ -474,6 +474,36 @@ Output:
 **Note:** Messages are sent as the bot/app. The bot must be added to group chats before it can send messages to them.
 Replies sent with `--parent-id` are always created in a thread.
 
+#### Edit Message
+
+Edit a previously sent bot message in-place.
+
+```bash
+# Edit a message as post (default)
+lark msg edit --message-id om_dc13264520392913993dd051dba21dcf --text "Updated text"
+
+# Edit with markdown-lite content
+lark msg edit --message-id om_dc13264520392913993dd051dba21dcf --text "**Status:** *Green*"
+
+# Edit as plain text
+lark msg edit --message-id om_dc13264520392913993dd051dba21dcf --msg-type text --text "Line 1\nLine 2"
+```
+
+Flags:
+- `--message-id` (required): Message ID to edit
+- `--text` (required): New message text content (markdown-lite)
+- `--msg-type`: Message type: `post` (default) or `text`
+
+Output:
+```json
+{
+  "success": true,
+  "message_id": "om_dc13264520392913993dd051dba21dcf"
+}
+```
+
+**Note:** Only the bot's own messages can be edited. When `--msg-type text` is used with mentions, markdown, or links, the CLI auto-upgrades the message to `post`.
+
 #### React to Message
 
 Add a reaction to a message as the bot.

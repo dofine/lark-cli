@@ -252,6 +252,30 @@ func (c *Client) ReplyMessage(messageID, msgType, content, rootID string, replyI
 	return &resp, nil
 }
 
+// EditMessage edits a sent message
+// messageID: the ID of the message to edit
+// msgType: "text" or "post"
+// content: JSON string of new message content
+func (c *Client) EditMessage(messageID, msgType, content string) error {
+	path := fmt.Sprintf("/im/v1/messages/%s", messageID)
+
+	req := EditMessageRequest{
+		MsgType: msgType,
+		Content: content,
+	}
+
+	var resp BaseResponse
+	if err := c.PutWithTenantToken(path, req, &resp); err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return fmt.Errorf("API error %d: %s", resp.Code, resp.Msg)
+	}
+
+	return nil
+}
+
 // RecallMessage recalls/deletes a message
 // messageID: the ID of the message to recall
 func (c *Client) RecallMessage(messageID string) error {
