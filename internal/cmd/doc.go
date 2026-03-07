@@ -892,8 +892,13 @@ var docWriteMarkdownCmd = &cobra.Command{
 	Short: "Write markdown content to a document",
 	Long: `Write markdown content to a Lark document.
 
-The markdown is automatically converted to Lark document blocks using
-Feishu's convert API.
+The markdown is converted to Lark document blocks using Feishu's blocks/convert API.
+
+Supported: headings (H1-H9), paragraphs, bullet/ordered lists, code blocks,
+inline formatting (bold, italic, inline code).
+
+Not supported: tables, Callout blocks, Grid columns, Mermaid diagrams, images.
+For richer Lark-flavored Markdown, use 'doc mcp-create' instead.
 
 Content can be provided via:
   - --text flag: inline markdown text

@@ -310,7 +310,9 @@ Output (with markdown):
 lark doc write-markdown <document-id> [--text <content>] [--file <path>] [--index <position>]
 ```
 
-Writes markdown content to an existing document. The markdown is automatically converted to Lark document blocks using Feishu's convert API.
+Writes markdown content to an existing document. The markdown is converted to Lark document blocks using Feishu's `blocks/convert` API.
+
+**Supported syntax**: headings (H1–H9), paragraphs, bullet/ordered lists, code blocks, inline formatting (bold, italic, code). **Not supported**: tables, Callout blocks, Grid columns, Mermaid diagrams, images. For richer formatting, use `doc mcp-create` instead.
 
 Content options (one required):
 - `--text`: Markdown text content (inline, supports `\n` for line breaks)
@@ -472,7 +474,7 @@ Output:
 | List wiki sub-pages | `doc wiki-children` | Browse wiki hierarchy |
 | Create a new empty document | `doc create --title "..."` | Creates empty doc with title |
 | Create document with markdown | `doc create --title "..." --markdown "..."` | Create and initialize in one step |
-| Write markdown to existing doc | `doc write-markdown` | Convert markdown to Lark blocks automatically |
+| Write markdown to existing doc | `doc write-markdown` | Basic markdown only (no tables, callout, mermaid) |
 | Append content to doc | `doc append` | Add text, headings, lists, code, etc. |
 | Read/summarize content | `doc get` | Markdown is compact (~90KB) |
 | Analyze structure | `doc blocks` | Full block hierarchy |
