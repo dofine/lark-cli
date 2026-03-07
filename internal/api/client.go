@@ -180,6 +180,86 @@ func (c *Client) PatchWithTenantToken(path string, body interface{}, result inte
 	return c.doRequestWithTenantToken("PATCH", path, body, result)
 }
 
+// MCPCall calls a tool on the Feishu remote MCP server using the user access token.
+// It returns the raw text content from the tool response.
+func (c *Client) MCPCall(toolName string, arguments interface{}) (string, error) {
+	if err := auth.EnsureValidToken(); err != nil {
+		return "", err
+	}
+
+	type mcpParams struct {
+		Name      string      `json:"name"`
+		Arguments interface{} `json:"arguments"`
+	}
+	reqBody := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      1,
+		"method":  "tools/call",
+		"params": mcpParams{
+			Name:      toolName,
+			Arguments: arguments,
+		},
+	}
+
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal MCP request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", config.GetMCPURL(), bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return "", fmt.Errorf("failed to create MCP request: %w", err)
+	}
+
+	token := auth.GetTokenStore().GetAccessToken()
+	req.Header.Set("X-Lark-MCP-UAT", token)
+	req.Header.Set("X-Lark-MCP-Allowed-Tools", toolName)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("MCP request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read MCP response: %w", err)
+	}
+
+	var rpcResp struct {
+		Result *struct {
+			Content []struct {
+				Type string `json:"type"`
+				Text string `json:"text"`
+			} `json:"content"`
+			IsError bool `json:"isError"`
+		} `json:"result"`
+		Error *struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+
+	if err := json.Unmarshal(respBody, &rpcResp); err != nil {
+		return "", fmt.Errorf("failed to parse MCP response: %w", err)
+	}
+
+	if rpcResp.Error != nil {
+		return "", fmt.Errorf("MCP error %d: %s", rpcResp.Error.Code, rpcResp.Error.Message)
+	}
+
+	if rpcResp.Result == nil || len(rpcResp.Result.Content) == 0 {
+		return "", fmt.Errorf("empty MCP response")
+	}
+
+	if rpcResp.Result.IsError {
+		return "", fmt.Errorf("MCP tool error: %s", rpcResp.Result.Content[0].Text)
+	}
+
+	return rpcResp.Result.Content[0].Text, nil
+}
+
 // DownloadWithTenantToken performs a GET request that returns binary data
 // The caller is responsible for closing the returned ReadCloser
 func (c *Client) DownloadWithTenantToken(path string) (io.ReadCloser, string, error) {

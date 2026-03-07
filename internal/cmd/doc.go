@@ -957,6 +957,70 @@ Examples:
 	},
 }
 
+// --- doc mcp-create ---
+
+var docMCPCreateCmd = &cobra.Command{
+	Use:   "mcp-create",
+	Short: "Create a document via Feishu remote MCP (supports Lark-flavored Markdown)",
+	Long: `Create a new Lark document using the Feishu remote MCP service.
+
+Unlike 'doc create', this command uses the official MCP endpoint which supports
+Lark-flavored Markdown — an extended syntax with Callout blocks, Grid columns,
+Mermaid/PlantUML diagrams, image auto-upload, and more.
+
+Content can be provided via --text, --file, or stdin.
+
+Examples:
+  lark doc mcp-create --title "My Doc" --file content.md
+  lark doc mcp-create --title "My Doc" --text "# Hello\n\nWorld"
+  cat content.md | lark doc mcp-create --title "My Doc"
+  lark doc mcp-create --title "Wiki Doc" --wiki-space my_library --file content.md`,
+	Run: func(cmd *cobra.Command, args []string) {
+		title, _ := cmd.Flags().GetString("title")
+		inputFile, _ := cmd.Flags().GetString("file")
+		textContent, _ := cmd.Flags().GetString("text")
+		folderToken, _ := cmd.Flags().GetString("folder")
+		wikiNode, _ := cmd.Flags().GetString("wiki-node")
+		wikiSpace, _ := cmd.Flags().GetString("wiki-space")
+
+		var markdown string
+		var err error
+
+		switch {
+		case inputFile != "":
+			data, err := os.ReadFile(inputFile)
+			if err != nil {
+				output.Fatal("FILE_ERROR", fmt.Errorf("failed to read file: %w", err))
+			}
+			markdown = string(data)
+		case textContent != "":
+			markdown = unescapeString(textContent)
+		default:
+			data, err := io.ReadAll(os.Stdin)
+			if err != nil {
+				output.Fatal("INPUT_ERROR", fmt.Errorf("failed to read stdin: %w", err))
+			}
+			markdown = string(data)
+		}
+
+		if markdown == "" {
+			output.Fatal("MISSING_ARG", fmt.Errorf("markdown content is required (--text, --file, or stdin)"))
+		}
+
+		client := api.NewClient()
+		result, err := client.MCPCreateDoc(title, markdown, folderToken, wikiNode, wikiSpace)
+		if err != nil {
+			output.Fatal("API_ERROR", err)
+		}
+
+		output.JSON(api.OutputMCPCreateDoc{
+			Success: true,
+			DocID:   result.DocID,
+			DocURL:  result.DocURL,
+		})
+	},
+}
+
 // codeLanguageHelp returns a string listing code language IDs for the help text
 func codeLanguageHelp() string {
 	return "Common language IDs: 1=PlainText, 7=Bash, 8=C#, 9=C++, 10=C, 12=CSS, 22=Go, 24=HTML, 28=JSON, 29=Java, 30=JavaScript, 32=Kotlin, 49=Python, 52=Ruby, 53=Rust, 56=SQL, 61=Swift, 63=TypeScript, 67=YAML"
@@ -977,6 +1041,7 @@ func init() {
 	docCmd.AddCommand(docCreateCmd)
 	docCmd.AddCommand(docAppendCmd)
 	docCmd.AddCommand(docWriteMarkdownCmd)
+	docCmd.AddCommand(docMCPCreateCmd)
 
 	// Flags for doc wiki-search
 	docWikiSearchCmd.Flags().String("space-id", "", "Filter to specific wiki space ID")
@@ -1018,4 +1083,12 @@ func init() {
 	docWriteMarkdownCmd.Flags().String("text", "", "Markdown text content")
 	docWriteMarkdownCmd.Flags().String("file", "", "Read markdown from file")
 	docWriteMarkdownCmd.Flags().Int("index", -1, "Insertion position (-1=end, 0=beginning)")
+
+	// Flags for doc mcp-create
+	docMCPCreateCmd.Flags().String("title", "", "Document title")
+	docMCPCreateCmd.Flags().String("text", "", "Lark-flavored Markdown content")
+	docMCPCreateCmd.Flags().String("file", "", "Read Lark-flavored Markdown from file")
+	docMCPCreateCmd.Flags().String("folder", "", "Folder token (create in this folder)")
+	docMCPCreateCmd.Flags().String("wiki-node", "", "Wiki node token (create under this node)")
+	docMCPCreateCmd.Flags().String("wiki-space", "", "Wiki space ID, or 'my_library' for personal wiki")
 }

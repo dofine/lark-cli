@@ -757,6 +757,20 @@ type OutputDocumentWriteMarkdown struct {
 	BlockCount         int    `json:"block_count"`
 }
 
+// MCPCreateDocResult is the parsed result from the MCP create-doc tool
+type MCPCreateDocResult struct {
+	DocID   string `json:"doc_id"`
+	DocURL  string `json:"doc_url"`
+	Message string `json:"message"`
+}
+
+// OutputMCPCreateDoc is the CLI output for doc mcp-create
+type OutputMCPCreateDoc struct {
+	Success bool   `json:"success"`
+	DocID   string `json:"doc_id"`
+	DocURL  string `json:"doc_url"`
+}
+
 // OutputDocumentCreateWithMarkdown is the create with markdown response for CLI
 type OutputDocumentCreateWithMarkdown struct {
 	Success    bool   `json:"success"`

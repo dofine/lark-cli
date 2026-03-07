@@ -161,3 +161,11 @@ func GetBaseURL() string {
 	}
 	return "https://open.larksuite.com/open-apis"
 }
+
+// GetMCPURL returns the remote MCP server URL for the configured region
+func GetMCPURL() string {
+	if GetRegion() == "feishu" {
+		return "https://mcp.feishu.cn/mcp"
+	}
+	return "https://mcp.larksuite.com/mcp"
+}

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
@@ -313,6 +314,37 @@ func (c *Client) CreateDocumentWithMarkdown(title, folderToken string, markdown 
 	}
 
 	return doc, blocks, revisionID, nil
+}
+
+// MCPCreateDoc creates a new document via the Feishu remote MCP server.
+// Supports Lark-flavored Markdown with extended syntax (Callout, Grid, Mermaid, etc.).
+// folderToken, wikiNode, wikiSpace are optional; priority: wikiNode > wikiSpace > folderToken.
+func (c *Client) MCPCreateDoc(title, markdown, folderToken, wikiNode, wikiSpace string) (*MCPCreateDocResult, error) {
+	args := map[string]string{
+		"markdown": markdown,
+	}
+	if title != "" {
+		args["title"] = title
+	}
+	if wikiNode != "" {
+		args["wiki_node"] = wikiNode
+	} else if wikiSpace != "" {
+		args["wiki_space"] = wikiSpace
+	} else if folderToken != "" {
+		args["folder_token"] = folderToken
+	}
+
+	text, err := c.MCPCall("create-doc", args)
+	if err != nil {
+		return nil, err
+	}
+
+	var result MCPCreateDocResult
+	if err := json.Unmarshal([]byte(text), &result); err != nil {
+		return nil, fmt.Errorf("failed to parse create-doc result: %w\nraw: %s", err, text)
+	}
+
+	return &result, nil
 }
 
 // SearchDocuments searches for documents using the Lark Docs API
